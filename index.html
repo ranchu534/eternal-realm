@@ -129,28 +129,35 @@ player=new THREE.Group();scene.add(player);const rig={arms:[],legs:[],weapon:nul
 const armor=mat(bodyColor,.42,.32),armorDark=mat('#28333b',.58,.18),skin=mat('#c99570',.78),hair=mat(hairColor,.72),gold=mat('#c6a45d',.32,.68),cloth=mat(bodyType===2?'#55447c':bodyType===1?'#554b3c':'#343d4c',.88),leather=mat('#493329',.72),steel=mat('#aebdc5',.28,.78),eye=mat('#211b19',.35),white=mat('#e8dfce',.5);
 const ell=(p,s,x,y,z,m)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),m);o.scale.set(s[0],s[1],s[2]);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o};
 const limb=(p,a,b,r,m)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A);const o=new THREE.Mesh(new THREE.CapsuleGeometry(r,Math.max(.05,d.length()-r*2),5,10),m);o.position.copy(A).add(B).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());o.castShadow=true;p.add(o);ell(p,[r,r,r],...a,m);ell(p,[r,r,r],...b,m);return o};
-const torso=ell(player,[.48,.66,.29],0,1.88,0,armor);torso.rotation.z=-.035;rig.torso=torso;
+const torso=ell(player,[.43,.62,.255],0,1.88,0,armor);torso.rotation.z=-.025;rig.torso=torso;
+ell(player,[.31,.18,.19],0,2.23,.025,armor); // shaped upper chest and shoulders
 ell(player,[.4,.28,.3],0,1.45,.015,armorDark);
 ell(player,[.47,.105,.31],0,1.31,0,leather);
 ell(player,[.49,.075,.32],0,1.25,0,gold);
 ell(player,[.105,.11,.34],0,1.25,.015,steel);
-ell(player,[.17,.22,.12],0,2.3,-.005,skin);
-ell(player,[.255,.32,.235],0,2.72,0,skin);
-// Face: ears, nose, eyes and brows
+// Neck and a more natural adult head-to-body proportion
+ell(player,[.145,.23,.145],0,2.35,0,skin);
+ell(player,[.225,.285,.205],0,2.72,0,skin);
+// Face details: ears, eye sockets, irises, highlights, nose and mouth
 for(const side of [-1,1]){
-ell(player,[.065,.105,.065],side*.255,2.73,0,skin);
-ell(player,[.027,.045,.018],side*.115,2.77,.211,white);
-ell(player,[.014,.031,.012],side*.115,2.77,.229,eye);
-ell(player,[.055,.018,.025],side*.115,2.835,.215,hair);
+ ell(player,[.052,.09,.055],side*.22,2.72,0,skin);
+ ell(player,[.043,.061,.018],side*.092,2.765,.184,leather);
+ ell(player,[.033,.041,.018],side*.092,2.77,.198,white);
+ ell(player,[.017,.03,.012],side*.092,2.77,.214,eye);
+ ell(player,[.007,.01,.006],side*.084,2.784,.224,white);
+ ell(player,[.05,.014,.022],side*.092,2.825,.19,hair);
 }
-ell(player,[.045,.065,.055],0,2.69,.235,skin);
-ell(player,[.09,.025,.018],0,2.58,.222,leather);
-// Hair cap, fringe and locks
-ell(player,[.27,.145,.25],0,2.96,-.018,hair);
-ell(player,[.22,.09,.22],0,3.025,-.025,hair);
-for(let i=0;i<5;i++){const x=(i-2)*.085;const lock=ell(player,[.065,.13,.075],x,2.88,.17,hair);lock.rotation.z=(i-2)*-.13}
-ell(player,[.22,.2,.19],0,2.78,-.17,hair);
-for(const side of [-1,1])ell(player,[.065,.17,.085],side*.22,2.76,-.015,hair);
+ell(player,[.033,.07,.045],0,2.68,.205,skin);
+ell(player,[.055,.018,.012],0,2.585,.194,leather);
+ell(player,[.045,.009,.009],0,2.61,.195,skin);
+// Hair cap, shaped fringe and side locks
+ell(player,[.235,.12,.22],0,2.94,-.012,hair);
+ell(player,[.19,.065,.19],0,2.995,-.025,hair);
+for(let i=0;i<5;i++){const x=(i-2)*.075;const lock=ell(player,[.052,.105,.06],x,2.86,.145,hair);lock.rotation.z=(i-2)*-.12}
+ell(player,[.19,.17,.17],0,2.77,-.15,hair);
+for(const side of [-1,1])ell(player,[.052,.14,.07],side*.19,2.74,-.01,hair);
+// Subtle human facial contour
+for(const side of [-1,1])ell(player,[.055,.045,.018],side*.13,2.65,.17,skin);
 // Shoulder plates and arms
 for(const side of [-1,1]){
 const shoulder=ell(player,[.22,.2,.23],side*.49,2.22,0,armor);
