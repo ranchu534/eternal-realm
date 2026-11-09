@@ -192,14 +192,15 @@ return player
 }
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
 function init(){renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;mount.appendChild(renderer.domElement);camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,300);camera.position.set(0,5,9);clock=new THREE.Clock();createWorld();player=makePlayer();player.position.set(0,0,0);addEventListener('resize',resize);resize();renderer.setAnimationLoop(loop)}
-function loop(){if(!renderer)return;const dt=Math.min(clock.getDelta(),.04);if(started&&player){let dx=(keys.KeyD?1:0)-(keys.KeyA?1:0)+move.x,dz=(keys.KeyS?1:0)-(keys.KeyW?1:0)+move.y;const len=Math.hypot(dx,dz),moving=len>.08;let wx=0,wz=0;if(moving){dx/=Math.max(1,len);dz/=Math.max(1,len);const a=yaw;wx=dx*Math.cos(a)+dz*Math.sin(a);wz=-dx*Math.sin(a)+dz*Math.cos(a);player.position.x+=wx*dt*6;player.position.z+=wz*dt*6;player.rotation.y=Math.atan2(wx,wz);}
+function loop(){if(!renderer)return;const dt=Math.min(clock.getDelta(),.04);if(started&&player){let dx=(keys.KeyD?1:0)-(keys.KeyA?1:0)+move.x,dz=(keys.KeyS?1:0)-(keys.KeyW?1:0)+move.y;const len=Math.hypot(dx,dz),moving=len>.08;let wx=0,wz=0;if(moving){dx/=Math.max(1,len);dz/=Math.max(1,len);const a=yaw;wx=dx*Math.cos(a)+dz*Math.sin(a);wz=-dx*Math.sin(a)+dz*Math.cos(a);player.position.x+=wx*dt*6;player.position.z+=wz*dt*6;player.userData.targetYaw=Math.atan2(wx,wz);}
+if(player.userData.targetYaw!==undefined){const angleDiff=Math.atan2(Math.sin(player.userData.targetYaw-player.rotation.y),Math.cos(player.userData.targetYaw-player.rotation.y));player.rotation.y+=angleDiff*(1-Math.exp(-12*dt));}
 if(!grounded){jumpV-=18*dt;player.position.y+=jumpV*dt;if(player.position.y<=0){player.position.y=0;jumpV=0;grounded=true}}
 const rig=player.userData.rig;if(rig){const t=clock.elapsedTime,walk=moving?Math.sin(t*10):0,attack=attackT>0?1-attackT/.45:0;
 if(grounded)player.position.y=moving?Math.abs(Math.sin(t*10))*.045:0;
 rig.legs.forEach(({pivot,side})=>{pivot.rotation.x=moving?Math.sin(t*10+(side<0?0:Math.PI))*.62:0;pivot.rotation.z=moving?Math.cos(t*10+(side<0?0:Math.PI))*.035:0});
 rig.arms.forEach(({pivot,side})=>{const phase=side>0?Math.PI:0;pivot.rotation.x=moving?Math.sin(t*10+phase)*.32:0;pivot.rotation.z=side>0?-.08:.08});
 rig.torso.rotation.z=-.035+(moving?Math.sin(t*10)*.025:0);
-if(attackT>0){const wind=Math.sin(Math.min(1,attack*2)*Math.PI/2);rig.arms[1].pivot.rotation.x=-1.15+wind*.25;rig.arms[1].pivot.rotation.z=-.35+attack*.45;rig.weapon.rotation.x=-.9+Math.sin(attack*Math.PI)*1.35;rig.weapon.rotation.z=-.15-Math.sin(attack*Math.PI)*.65;player.rotation.y+=Math.sin(attack*Math.PI)*.018;}else{rig.weapon.rotation.set(0,0,0);}
+if(attackT>0){const wind=Math.sin(Math.min(1,attack*2)*Math.PI/2);rig.arms[1].pivot.rotation.x=-1.15+wind*.25;rig.arms[1].pivot.rotation.z=-.35+attack*.45;rig.weapon.rotation.x=-.9+Math.sin(attack*Math.PI)*1.35;rig.weapon.rotation.z=-.15-Math.sin(attack*Math.PI)*.65;}else{rig.weapon.rotation.set(0,0,0);}
 }
 if(attackT>0)attackT=Math.max(0,attackT-dt);
 const target=new THREE.Vector3(player.position.x-Math.sin(yaw)*.5,player.position.y+2.1,player.position.z+Math.cos(yaw)*.5);const desired=new THREE.Vector3(player.position.x+Math.sin(yaw)*3,player.position.y+5.2,player.position.z+Math.cos(yaw)*7.5);camera.position.lerp(desired,.08);camera.lookAt(target);
