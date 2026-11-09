@@ -137,27 +137,56 @@ ell(player,[.49,.075,.32],0,1.25,0,gold);
 ell(player,[.105,.11,.34],0,1.25,.015,steel);
 // Neck and a more natural adult head-to-body proportion
 ell(player,[.145,.23,.145],0,2.35,0,skin);
-ell(player,[.225,.285,.205],0,2.72,0,skin);
-// Face details: ears, eye sockets, irises, highlights, nose and mouth
+ell(player,[.245,.32,.215],0,2.73,0,skin);
+// Anime-inspired face: larger expressive eyes, layered irises and soft highlights
 for(const side of [-1,1]){
- ell(player,[.052,.09,.055],side*.22,2.72,0,skin);
- ell(player,[.043,.061,.018],side*.092,2.765,.184,leather);
- ell(player,[.033,.041,.018],side*.092,2.77,.198,white);
- ell(player,[.017,.03,.012],side*.092,2.77,.214,eye);
- ell(player,[.007,.01,.006],side*.084,2.784,.224,white);
- ell(player,[.05,.014,.022],side*.092,2.825,.19,hair);
+ ell(player,[.052,.09,.055],side*.235,2.73,0,skin);
+ ell(player,[.067,.09,.022],side*.096,2.77,.193,leather);
+ ell(player,[.054,.075,.018],side*.096,2.77,.211,white);
+ ell(player,[.031,.057,.014],side*.096,2.765,.227,eye);
+ ell(player,[.019,.027,.009],side*.096,2.75,.239,mat('#6d9fc0',.3));
+ ell(player,[.012,.018,.008],side*.087,2.79,.24,white);
+ ell(player,[.058,.018,.024],side*.096,2.842,.195,hair);
 }
-ell(player,[.033,.07,.045],0,2.68,.205,skin);
-ell(player,[.055,.018,.012],0,2.585,.194,leather);
-ell(player,[.045,.009,.009],0,2.61,.195,skin);
-// Hair cap, shaped fringe and side locks
-ell(player,[.235,.12,.22],0,2.94,-.012,hair);
-ell(player,[.19,.065,.19],0,2.995,-.025,hair);
-for(let i=0;i<5;i++){const x=(i-2)*.075;const lock=ell(player,[.052,.105,.06],x,2.86,.145,hair);lock.rotation.z=(i-2)*-.12}
-ell(player,[.19,.17,.17],0,2.77,-.15,hair);
-for(const side of [-1,1])ell(player,[.052,.14,.07],side*.19,2.74,-.01,hair);
-// Subtle human facial contour
-for(const side of [-1,1])ell(player,[.055,.045,.018],side*.13,2.65,.17,skin);
+ell(player,[.026,.052,.035],0,2.68,.216,skin);
+ell(player,[.052,.012,.009],0,2.585,.205,leather);
+ell(player,[.035,.007,.008],0,2.605,.211,skin);
+// Stylized layered anime hair cap and swept bangs
+ell(player,[.25,.13,.23],0,2.96,-.012,hair);
+ell(player,[.22,.075,.205],0,3.015,-.025,hair);
+for(let i=0;i<7;i++){
+ const x=(i-3)*.064;
+ const lock=ell(player,[.052,.13,.075],x,2.875,.155,hair);
+ lock.rotation.z=(i-3)*-.16;
+}
+ell(player,[.205,.18,.18],0,2.78,-.15,hair);
+for(const side of [-1,1]){
+ const sideLock=ell(player,[.065,.19,.075],side*.205,2.72,-.005,hair);
+ sideLock.rotation.z=side*-.12;
+}
+// Distinct swept hair tips create a clean fantasy-anime silhouette
+for(let i=0;i<6;i++){
+ const x=(i-2.5)*.075;
+ const spike=new THREE.Mesh(new THREE.ConeGeometry(.075,.28,5),hair);
+ spike.position.set(x,3.035,-.035);spike.rotation.z=(i-2.5)*-.22;spike.rotation.x=-.16;player.add(spike);
+}
+// Subtle cheek color
+const blush=mat('#d98d83',.9);
+for(const side of [-1,1])ell(player,[.045,.018,.009],side*.15,2.665,.194,blush);
+// Ornate fantasy-adventurer costume: layered mantle, collar and gold details
+const mantle=mat(bodyType===2?'#514477':bodyType===1?'#65513c':'#263b55',.72,.12);
+const capeGeo=new THREE.BufferGeometry();
+const capeVerts=[-.28,2.28,-.16,.28,2.28,-.16,-.42,.72,-.25,.42,.72,-.25];
+capeGeo.setAttribute('position',new THREE.Float32BufferAttribute(capeVerts,3));
+capeGeo.setIndex([0,2,1,1,2,3]);capeGeo.computeVertexNormals();
+const cape=new THREE.Mesh(capeGeo,new THREE.MeshStandardMaterial({color:bodyType===2?'#67558f':bodyType===1?'#776044':'#304b70',roughness:.85,side:THREE.DoubleSide}));
+cape.castShadow=true;player.add(cape);
+ell(player,[.29,.12,.22],0,2.27,-.015,gold);
+for(const side of [-1,1]){
+ const clasp=ell(player,[.075,.075,.035],side*.31,2.23,.19,gold);
+ clasp.rotation.z=side*.35;
+}
+ell(player,[.085,.12,.035],0,2.12,.265,steel);
 // Shoulder plates and arms
 for(const side of [-1,1]){
 const shoulder=ell(player,[.22,.2,.23],side*.49,2.22,0,armor);
