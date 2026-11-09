@@ -22,12 +22,15 @@
 import * as THREE from 'three';
 const mount=document.getElementById('game');
 let scene,camera,renderer,player,clock,started=false,yaw=0,keys={},move={x:0,y:0},jumpV=0,grounded=true,attackT=0,bodyColor='#526b83',hairColor='#3a2418',bodyType=0;
+let groundHeight=(x,z)=>0,worldColliders=[];
+function canStandAt(x,z){if(Math.abs(x)>112||Math.abs(z)>112)return false;for(const c of worldColliders){const dx=x-c.x,dz=z-c.z,min=c.r+.38;if(dx*dx+dz*dz<min*min)return false;}return true;}
 const mat=(c,r=.8,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 function box(parent,w,h,d,x,y,z,material){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);o.position.set(x,y,z);parent.add(o);return o}
 function sphere(parent,r,x,y,z,material){const o=new THREE.Mesh(new THREE.SphereGeometry(r,16,12),material);o.position.set(x,y,z);parent.add(o);return o}
 function makeTree(x,z,s=1){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);const trunk=mat('#59432d'),leaf1=mat('#31583d'),leaf2=mat('#456e46');const t=new THREE.Mesh(new THREE.CylinderGeometry(.18*s,.28*s,2.2*s,8),trunk);t.position.y=1.1*s;g.add(t);for(let i=0;i<3;i++){const c=new THREE.Mesh(new THREE.ConeGeometry((1.15-i*.18)*s,2*s,8),i%2?leaf2:leaf1);c.position.y=(2.1+i*.78)*s;g.add(c)}}
 function makeRock(x,z,s){const o=new THREE.Mesh(new THREE.DodecahedronGeometry(s,0),mat('#777b75'));o.position.set(x,s*.45,z);o.rotation.set(.2,.7,.3);scene.add(o)}
 function createWorld(){
+worldColliders=[];
 scene=new THREE.Scene();
 scene.background=new THREE.Color('#a9c9d7');
 scene.fog=new THREE.FogExp2('#b5c9bd',.0065);
@@ -41,6 +44,7 @@ sun.shadow.bias=-.00025;scene.add(sun);
 const fill=new THREE.DirectionalLight('#c5dded',.45);fill.position.set(30,18,-35);scene.add(fill);
 const rand=(a,b)=>a+Math.random()*(b-a);
 const heightAt=(x,z)=>.28*Math.sin(x*.075)*Math.cos(z*.062)+.16*Math.sin((x+z)*.12)+.08*Math.cos(z*.22);
+groundHeight=heightAt;
 const terrain=new THREE.PlaneGeometry(240,240,150,150);
 const pos=terrain.attributes.position, colors=[];
 const c1=new THREE.Color('#526f43'),c2=new THREE.Color('#718651'),c3=new THREE.Color('#8b9160');
@@ -70,12 +74,14 @@ for(let i=0;i<6200;i++){
 }
 grass.instanceMatrix.needsUpdate=true;scene.add(grass);
 function tree(x,z,s=1){
+ worldColliders.push({x,z,r:.48*s});
  const g=new THREE.Group();g.position.set(x,heightAt(x,z),z);g.scale.setScalar(s);scene.add(g);
  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.32,2.9,9),bark);trunk.position.y=1.45;trunk.castShadow=true;g.add(trunk);
  for(let b=0;b<3;b++){const branch=new THREE.Mesh(new THREE.CylinderGeometry(.07,.13,1.15,7),bark);branch.position.set((b-1)*.32,2.05,-.05);branch.rotation.z=(b-1)*-.55;branch.rotation.x=.25;g.add(branch)}
  for(let k=0;k<5;k++){const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(rand(.8,1.25),1),leafMats[Math.floor(rand(0,leafMats.length))]);crown.position.set(rand(-.7,.7),2.8+rand(-.1,1.2),rand(-.65,.65));crown.scale.set(1,rand(.8,1.3),1);crown.castShadow=true;g.add(crown)}
 }
 function rock(x,z,s){
+ worldColliders.push({x,z,r:s*.9+.08});
  const o=new THREE.Mesh(new THREE.DodecahedronGeometry(s,1),stone);o.position.set(x,heightAt(x,z)+s*.35,z);o.rotation.set(rand(0,1),rand(0,6),rand(0,1));o.scale.set(rand(.8,1.3),rand(.65,1.05),rand(.8,1.25));o.castShadow=true;o.receiveShadow=true;scene.add(o);
 }
 function shrub(x,z){
@@ -228,11 +234,11 @@ return player
 }
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
 function init(){renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;mount.appendChild(renderer.domElement);camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,300);camera.position.set(0,5,9);clock=new THREE.Clock();createWorld();player=makePlayer();player.position.set(0,0,0);addEventListener('resize',resize);resize();renderer.setAnimationLoop(loop)}
-function loop(){if(!renderer)return;const dt=Math.min(clock.getDelta(),.04);if(started&&player){let dx=(keys.KeyD?1:0)-(keys.KeyA?1:0)+move.x,dz=(keys.KeyS?1:0)-(keys.KeyW?1:0)+move.y;const len=Math.hypot(dx,dz),moving=len>.08;let wx=0,wz=0;if(moving){dx/=Math.max(1,len);dz/=Math.max(1,len);const a=yaw;wx=dx*Math.cos(a)+dz*Math.sin(a);wz=-dx*Math.sin(a)+dz*Math.cos(a);player.position.x+=wx*dt*6;player.position.z+=wz*dt*6;player.userData.targetYaw=Math.atan2(wx,wz);}
+function loop(){if(!renderer)return;const dt=Math.min(clock.getDelta(),.04);if(started&&player){let dx=(keys.KeyD?1:0)-(keys.KeyA?1:0)+move.x,dz=(keys.KeyS?1:0)-(keys.KeyW?1:0)+move.y;const len=Math.hypot(dx,dz),moving=len>.08;let wx=0,wz=0;if(moving){dx/=Math.max(1,len);dz/=Math.max(1,len);const a=yaw;wx=dx*Math.cos(a)+dz*Math.sin(a);wz=-dx*Math.sin(a)+dz*Math.cos(a);const nx=player.position.x+wx*dt*6,nz=player.position.z+wz*dt*6;if(canStandAt(nx,nz)){player.position.x=nx;player.position.z=nz;}else{if(canStandAt(nx,player.position.z))player.position.x=nx;if(canStandAt(player.position.x,nz))player.position.z=nz;}player.userData.targetYaw=Math.atan2(wx,wz);}
 if(player.userData.targetYaw!==undefined){const angleDiff=Math.atan2(Math.sin(player.userData.targetYaw-player.rotation.y),Math.cos(player.userData.targetYaw-player.rotation.y));player.rotation.y+=angleDiff*(1-Math.exp(-12*dt));}
-if(!grounded){jumpV-=18*dt;player.position.y+=jumpV*dt;if(player.position.y<=0){player.position.y=0;jumpV=0;grounded=true}}
+const groundY=groundHeight(player.position.x,player.position.z);if(!grounded){jumpV-=18*dt;player.position.y+=jumpV*dt;if(player.position.y<=groundY){player.position.y=groundY;jumpV=0;grounded=true}}else{player.position.y=groundY;}
 const rig=player.userData.rig;if(rig){const t=clock.elapsedTime,walk=moving?Math.sin(t*10):0,attack=attackT>0?1-attackT/.45:0;
-if(grounded)player.position.y=moving?Math.abs(Math.sin(t*10))*.045:0;
+if(grounded)player.position.y=groundHeight(player.position.x,player.position.z)+(moving?Math.abs(Math.sin(t*10))*.045:0);
 rig.legs.forEach(({pivot,side})=>{pivot.rotation.x=moving?Math.sin(t*10+(side<0?0:Math.PI))*.62:0;pivot.rotation.z=moving?Math.cos(t*10+(side<0?0:Math.PI))*.035:0});
 rig.arms.forEach(({pivot,side})=>{const phase=side>0?Math.PI:0;pivot.rotation.x=moving?Math.sin(t*10+phase)*.32:0;pivot.rotation.z=side>0?-.08:.08});
 rig.torso.rotation.z=-.035+(moving?Math.sin(t*10)*.025:0);
