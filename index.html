@@ -125,11 +125,11 @@ const cloudMat=new THREE.MeshStandardMaterial({color:'#e8eff0',roughness:1,trans
 for(let i=0;i<18;i++){const g=new THREE.Group();let x=rand(-100,100),z=rand(-115,-75);g.position.set(x,rand(28,42),z);for(let j=0;j<4;j++){const puff=new THREE.Mesh(new THREE.SphereGeometry(rand(2,4),10,8),cloudMat);puff.position.set(j*2.1,rand(-.5,.7),rand(-1,1));puff.scale.y=.45;g.add(puff)}scene.add(g)}
 }
 function makePlayer(){
-player=new THREE.Group();scene.add(player);
+player=new THREE.Group();scene.add(player);const rig={arms:[],legs:[],weapon:null,torso:null};
 const armor=mat(bodyColor,.42,.32),armorDark=mat('#28333b',.58,.18),skin=mat('#c99570',.78),hair=mat(hairColor,.72),gold=mat('#c6a45d',.32,.68),cloth=mat(bodyType===2?'#55447c':bodyType===1?'#554b3c':'#343d4c',.88),leather=mat('#493329',.72),steel=mat('#aebdc5',.28,.78),eye=mat('#211b19',.35),white=mat('#e8dfce',.5);
 const ell=(p,s,x,y,z,m)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),m);o.scale.set(s[0],s[1],s[2]);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o};
 const limb=(p,a,b,r,m)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=new THREE.Vector3().subVectors(B,A);const o=new THREE.Mesh(new THREE.CapsuleGeometry(r,Math.max(.05,d.length()-r*2),5,10),m);o.position.copy(A).add(B).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());o.castShadow=true;p.add(o);ell(p,[r,r,r],...a,m);ell(p,[r,r,r],...b,m);return o};
-const torso=ell(player,[.48,.66,.29],0,1.88,0,armor);torso.rotation.z=-.035;
+const torso=ell(player,[.48,.66,.29],0,1.88,0,armor);torso.rotation.z=-.035;rig.torso=torso;
 ell(player,[.4,.28,.3],0,1.45,.015,armorDark);
 ell(player,[.47,.105,.31],0,1.31,0,leather);
 ell(player,[.49,.075,.32],0,1.25,0,gold);
@@ -153,23 +153,25 @@ ell(player,[.22,.2,.19],0,2.78,-.17,hair);
 for(const side of [-1,1])ell(player,[.065,.17,.085],side*.22,2.76,-.015,hair);
 // Shoulder plates and arms
 for(const side of [-1,1]){
-ell(player,[.22,.2,.23],side*.49,2.22,0,armor);
+const shoulder=ell(player,[.22,.2,.23],side*.49,2.22,0,armor);
 ell(player,[.2,.1,.22],side*.49,2.28,.015,gold);
-limb(player,[side*.53,2.16,0],[side*.66,1.68,.025],.115,armor);
-ell(player,[.145,.17,.15],side*.66,1.68,.025,armorDark);
-ell(player,[.15,.1,.15],side*.66,1.55,.035,steel);
-limb(player,[side*.66,1.57,.035],[side*.72,1.22,.11],.09,leather);
-ell(player,[.105,.12,.105],side*.72,1.18,.12,skin);
-ell(player,[.14,.13,.16],side*.72,1.08,.1,leather);
+const pivot=new THREE.Group();pivot.position.set(side*.53,2.16,0);player.add(pivot);rig.arms.push({pivot,side});
+limb(pivot,[0,0,0],[side*.13,-.48,.025],.115,armor);
+ell(pivot,[.145,.17,.15],side*.13,-.48,.025,armorDark);
+ell(pivot,[.15,.1,.15],side*.13,-.61,.035,steel);
+limb(pivot,[side*.13,-.59,.035],[side*.19,-.94,.11],.09,leather);
+ell(pivot,[.105,.12,.105],side*.19,-.98,.12,skin);
+ell(pivot,[.14,.13,.16],side*.19,-1.08,.1,leather);
 }
 // Waist, layered tunic and leg armor
 for(const side of [-1,1]){
-ell(player,[.24,.25,.24],side*.235,1.12,0,cloth);
-limb(player,[side*.23,1.12,0],[side*.25,.62,.015],.145,cloth);
-ell(player,[.17,.13,.19],side*.25,.58,.015,armorDark);
-limb(player,[side*.25,.57,.02],[side*.26,.19,.055],.105,leather);
-ell(player,[.16,.105,.25],side*.26,.105,.105,armorDark);
-ell(player,[.17,.055,.28],side*.26,.075,.13,steel);
+const hip=new THREE.Group();hip.position.set(side*.235,1.12,0);player.add(hip);rig.legs.push({pivot:hip,side});
+ell(hip,[.24,.25,.24],0,0,0,cloth);
+limb(hip,[0,0,0],[side*.015,-.5,.015],.145,cloth);
+ell(hip,[.17,.13,.19],side*.015,-.54,.015,armorDark);
+limb(hip,[side*.015,-.55,.02],[side*.025,-.93,.055],.105,leather);
+ell(hip,[.16,.105,.25],side*.025,-1.015,.105,armorDark);
+ell(hip,[.17,.055,.28],side*.025,-1.045,.13,steel);
 }
 for(let i=0;i<3;i++){const flap=ell(player,[.16,.34,.045],(i-1)*.2,.98,.24,cloth);flap.rotation.z=(i-1)*-.12}
 ell(player,[.18,.11,.09],0,1.27,.31,gold);
@@ -179,17 +181,27 @@ ell(player,[.075,.12,.025],0,1.92,.316,armorDark);
 ell(player,[.035,.075,.018],0,1.92,.34,steel);
 // Sword, hilt and scabbard at the hip/back
 const scabbard=box(player,.14,1.2,.17,.83,1.52,-.12,leather);scabbard.rotation.z=-.18;
-const blade=box(player,.075,1.25,.045,.84,1.58,.03,steel);blade.rotation.z=-.18;
-const guard=box(player,.28,.065,.09,.84,.94,.035,gold);guard.rotation.z=-.18;
-const grip=box(player,.09,.28,.09,.84,.78,.035,leather);grip.rotation.z=-.18;
-ell(player,[.07,.07,.07],.84,.63,.035,gold);
+const weapon=new THREE.Group();weapon.position.set(.72,1.25,.1);player.add(weapon);rig.weapon=weapon;
+const blade=box(weapon,.075,1.18,.045,0,-.62,.12,steel);
+const edge=box(weapon,.018,1.08,.012,.045,-.62,.145,white);
+const guard=box(weapon,.28,.065,.09,0,-.04,.12,gold);
+const grip=box(weapon,.09,.28,.09,0,.12,.12,leather);
+ell(weapon,[.07,.07,.07],0,.28,.12,gold);
+player.userData.rig=rig;
 return player
 }
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
 function init(){renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;mount.appendChild(renderer.domElement);camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,300);camera.position.set(0,5,9);clock=new THREE.Clock();createWorld();player=makePlayer();player.position.set(0,0,0);addEventListener('resize',resize);resize();renderer.setAnimationLoop(loop)}
-function loop(){if(!renderer)return;const dt=Math.min(clock.getDelta(),.04);if(started&&player){let dx=(keys.KeyD?1:0)-(keys.KeyA?1:0)+move.x,dz=(keys.KeyS?1:0)-(keys.KeyW?1:0)+move.y;const len=Math.hypot(dx,dz);if(len>.08){dx/=Math.max(1,len);dz/=Math.max(1,len);const a=yaw;const wx=dx*Math.cos(a)+dz*Math.sin(a),wz=-dx*Math.sin(a)+dz*Math.cos(a);player.position.x+=wx*dt*6;player.position.z+=wz*dt*6;player.rotation.y=Math.atan2(wx,wz); }
+function loop(){if(!renderer)return;const dt=Math.min(clock.getDelta(),.04);if(started&&player){let dx=(keys.KeyD?1:0)-(keys.KeyA?1:0)+move.x,dz=(keys.KeyS?1:0)-(keys.KeyW?1:0)+move.y;const len=Math.hypot(dx,dz),moving=len>.08;let wx=0,wz=0;if(moving){dx/=Math.max(1,len);dz/=Math.max(1,len);const a=yaw;wx=dx*Math.cos(a)+dz*Math.sin(a);wz=-dx*Math.sin(a)+dz*Math.cos(a);player.position.x+=wx*dt*6;player.position.z+=wz*dt*6;player.rotation.y=Math.atan2(wx,wz);}
 if(!grounded){jumpV-=18*dt;player.position.y+=jumpV*dt;if(player.position.y<=0){player.position.y=0;jumpV=0;grounded=true}}
-if(attackT>0){attackT-=dt;player.rotation.y+=Math.sin(attackT*18)*.035}
+const rig=player.userData.rig;if(rig){const t=clock.elapsedTime,walk=moving?Math.sin(t*10):0,attack=attackT>0?1-attackT/.45:0;
+player.position.y+=(moving?Math.abs(Math.sin(t*10))*.045:0);
+rig.legs.forEach(({pivot,side})=>{pivot.rotation.x=moving?Math.sin(t*10+(side<0?0:Math.PI))*.62:0;pivot.rotation.z=moving?Math.cos(t*10+(side<0?0:Math.PI))*.035:0});
+rig.arms.forEach(({pivot,side})=>{const phase=side>0?Math.PI:0;pivot.rotation.x=moving?Math.sin(t*10+phase)*.32:0;pivot.rotation.z=side>0?-.08:.08});
+rig.torso.rotation.z=-.035+(moving?Math.sin(t*10)*.025:0);
+if(attackT>0){const wind=Math.sin(Math.min(1,attack*2)*Math.PI/2);rig.arms[1].pivot.rotation.x=-1.15+wind*.25;rig.arms[1].pivot.rotation.z=-.35+attack*.45;rig.weapon.rotation.x=-.9+Math.sin(attack*Math.PI)*1.35;rig.weapon.rotation.z=-.15-Math.sin(attack*Math.PI)*.65;player.rotation.y+=Math.sin(attack*Math.PI)*.018;}else{rig.weapon.rotation.set(0,0,0);}
+}
+if(attackT>0)attackT=Math.max(0,attackT-dt);
 const target=new THREE.Vector3(player.position.x-Math.sin(yaw)*.5,player.position.y+2.1,player.position.z+Math.cos(yaw)*.5);const desired=new THREE.Vector3(player.position.x+Math.sin(yaw)*3,player.position.y+5.2,player.position.z+Math.cos(yaw)*7.5);camera.position.lerp(desired,.08);camera.lookAt(target);
 }renderer.render(scene,camera)}
 init();
